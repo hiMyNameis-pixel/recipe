@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recipe AI - Ingredient-Based Recipe Finder</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        #food_img{
+            height:150px;
+            width:150px;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f4f7fc;
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            background-color: #007bff;
+            color: #fff;
+            padding: 20px 0;
+            text-align: center;
+        }
+        header h1 {
+            margin: 0;
+            font-size: 36px;
+            font-weight: 500;
+        }
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        input[type="text"], select, button {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #007bff;
+            color: #fff;
+            cursor: pointer;
+            border: none;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #recipeContainer {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+        }
+        .recipe-card {
+            background-color: #fff;
+            width: 25%;
+            margin: 15px 0;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+            text-align: center;
+        }
+        .recipe-card:hover {
+            transform: scale(1.05);
+        }
+        .recipe-card img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+        .recipe-card h2 {
+            color: #007bff;
+            margin: 10px 0;
+            font-size: 18px;
+            font-weight: 500;
+        }
+        .recipe-card p {
+            color: #555;
+            text-align: justify;
+            line-height: 1.6;
+        }
+        .recipe-card a {
+            display: inline-block;
+            padding: 8px 12px;
+            margin-top: 10px;
+            background-color: #007bff;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 6px;
+            transition: background-color 0.3s ease;
+        }
+        .recipe-card a:hover {
+            background-color: #0056b3;
+        }
+        #cuisineFilters {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+        .filter-btn {
+            background-color: #007bff;
+            color: #fff;
+            padding: 10px 20px;
+            margin: 0 10px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .filter-btn:hover {
+            background-color: #0056b3;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #007bff;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        @media (max-width: 768px) {
+            .recipe-card {
+                width: 45%;
+            }
+        }
+        @media (max-width: 480px) {
+            .recipe-card {
+                width: 100%;
+            }
+            header h1 {
+                font-size: 28px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Recipe AI - Find Recipes Based on Ingredients</h1>
+</header>
+
+<div class="container">
+    <input type="text" id="ingredientInput" placeholder="Enter ingredients (e.g., tomato, garlic, onion)">
+    <button onclick="findRecipes()">Find Recipes</button>
+
+    <div id="cuisineFilters">
+        <button class="filter-btn" onclick="filterCuisine('All')">All</button>
+        <button class="filter-btn" onclick="filterCuisine('South Indian Recipes')">South Indian</button>
+        <button class="filter-btn" onclick="filterCuisine('North Indian Recipes')">North Indian</button>
+        <button class="filter-btn" onclick="filterCuisine('Chinese')">Chinese</button>
+        <button class="filter-btn" onclick="filterCuisine('Continental')">Continental</button>    </div>
+
+    <div id="loadingSpinner" class="spinner" style="display: none;"></div>
+
+    <div id="recipeContainer"></div>
+</div>
+
+<script>
+    let recipes = [];
+    let filteredRecipes = [];
+
+    async function loadRecipes() {
+        try {
+            const response = await fetch('recipes.json');
+            recipes = await response.json();
+            console.log("Recipes loaded successfully:", recipes);
+        } catch (error) {
+            console.error("Error loading recipes:", error);
+        }
+    }
+
+    function findRecipes() {
+        const input = document.getElementById("ingredientInput").value.toLowerCase();
+        const userIngredients = input.split(',').map(item => item.trim());
+
+        document.getElementById("loadingSpinner").style.display = "block"; // Show loading spinner
+
+        setTimeout(() => { // Simulate a delay for the recipe fetch
+            filteredRecipes = recipes.filter(recipe => {
+                const recipeIngredients = recipe["Cleaned-Ingredients"].split(',').map(ing => ing.trim().toLowerCase());
+                const matchingIngredientCount = userIngredients.filter(ingredient => recipeIngredients.includes(ingredient)).length;
+                return matchingIngredientCount >= Math.ceil(userIngredients.length / 2);
+            });
+
+            displayRecipes(filteredRecipes);
+            document.getElementById("loadingSpinner").style.display = "none"; // Hide loading spinner
+        }, 500); // Simulated delay
+    }
+
+    function displayRecipes(recipesToDisplay) {
+        const recipeContainer = document.getElementById("recipeContainer");
+        recipeContainer.innerHTML = "";
+
+        if (recipesToDisplay.length === 0) {
+            recipeContainer.innerHTML = "<p>No recipes found with the ingredients provided.</p>";
+            return;
+        }
+
+        recipesToDisplay.forEach(recipe => {
+            const recipeDiv = document.createElement("div");
+            recipeDiv.className = "recipe-card";
+            recipeDiv.innerHTML = `
+                <h2>${recipe.TranslatedRecipeName}</h2>
+                <img src="${recipe["image-url"]}" alt="${recipe.TranslatedRecipeName}" id="food_img">
+                <p><strong>Cuisine:</strong> ${recipe.Cuisine}</p>
+                <p><strong>Ingredients:</strong> ${recipe["Cleaned-Ingredients"]}</p>
+                <p><strong>Preparation Time:</strong> ${recipe.TotalTimeInMins} mins</p>
+                <a href="${recipe.URL}" target="_blank">View Full Recipe</a>
+            `;
+            recipeContainer.appendChild(recipeDiv);
+        });
+    }
+
+    function filterCuisine(cuisine) {
+        const filtered = cuisine === "All" ? filteredRecipes : filteredRecipes.filter(recipe => recipe.Cuisine === cuisine);
+        displayRecipes(filtered);
+    }
+
+    document.addEventListener("DOMContentLoaded", loadRecipes);
+
+    const cors = require('cors');
+app.use(cors());
+
+</script>
+</body>
+</html>
